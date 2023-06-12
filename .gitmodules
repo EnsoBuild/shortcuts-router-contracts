@@ -5,3 +5,7 @@
 [submodule "lib/shortcuts-contracts"]
 	path = lib/shortcuts-contracts
 	url = https://github.com/EnsoFinance/shortcuts-contracts
+[submodule "lib/openzepplin-contracts"]
+	path = lib/openzepplin-contracts
+	url = https://github.com/openzepplin/openzepplin-contracts
+	branch = v4.5.0
