@@ -4,8 +4,11 @@
 @rari-capital/=lib/shortcuts-contracts/node_modules/@rari-capital/
 clones-with-immutable-args/=lib/shortcuts-contracts/node_modules/clones-with-immutable-args/
 ds-test/=lib/forge-std/lib/ds-test/src/
+erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/
 eth-gas-reporter/=lib/shortcuts-contracts/node_modules/eth-gas-reporter/
 forge-std/=lib/forge-std/src/
 hardhat-deploy/=lib/shortcuts-contracts/node_modules/hardhat-deploy/
 hardhat/=lib/shortcuts-contracts/node_modules/hardhat/
+openzeppelin-contracts/=lib/openzeppelin-contracts/
+openzeppelin/=lib/openzeppelin-contracts/contracts/
 shortcuts-contracts/=lib/shortcuts-contracts/contracts/
