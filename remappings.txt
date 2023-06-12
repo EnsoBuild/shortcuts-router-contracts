@@ -1,0 +1,11 @@
+@ensdomains/=lib/shortcuts-contracts/node_modules/@ensdomains/
+@ensofinance/=lib/shortcuts-contracts/node_modules/@ensofinance/
+@openzeppelin/=lib/shortcuts-contracts/node_modules/@openzeppelin/
+@rari-capital/=lib/shortcuts-contracts/node_modules/@rari-capital/
+clones-with-immutable-args/=lib/shortcuts-contracts/node_modules/clones-with-immutable-args/
+ds-test/=lib/forge-std/lib/ds-test/src/
+eth-gas-reporter/=lib/shortcuts-contracts/node_modules/eth-gas-reporter/
+forge-std/=lib/forge-std/src/
+hardhat-deploy/=lib/shortcuts-contracts/node_modules/hardhat-deploy/
+hardhat/=lib/shortcuts-contracts/node_modules/hardhat/
+shortcuts-contracts/=lib/shortcuts-contracts/contracts/
