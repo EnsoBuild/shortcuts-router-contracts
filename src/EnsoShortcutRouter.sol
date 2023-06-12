@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.16;
 
-
 import { IERC20 } from "openzeppelin/token/ERC20/IERC20.sol";
 
 interface IEnsoWalletFactory {
@@ -13,17 +12,16 @@ interface IEnsoWallet {
 }
 
 contract EnsoShortcutRouter {
-    address public constant ETH = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+    address private constant _eth = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+    IEnsoWalletFactory private constant _factory = IEnsoWalletFactory(0x7fEA6786D291A87fC4C98aFCCc5A5d3cFC36bc7b);
 
-    IEnsoWalletFactory public constant FACTORY = IEnsoWalletFactory(0x7fEA6786D291A87fC4C98aFCCc5A5d3cFC36bc7b);
-    IEnsoWallet public immutable WALLET;
+    IEnsoWallet public immutable wallet;
 
     error WrongValue();
     error AmountTooLow();
-    error TransferFailed();
 
     constructor() {
-        WALLET = FACTORY.deploy(bytes32(0), new bytes32[](0), new bytes[](0));
+        wallet = _factory.deploy(bytes32(0), new bytes32[](0), new bytes[](0));
     }
 
     function route(
@@ -32,13 +30,13 @@ contract EnsoShortcutRouter {
         bytes32[] calldata commands,
         bytes[] calldata state
     ) public payable returns (bytes[] memory returnData) {
-        if (tokenIn == ETH) {
+        if (tokenIn == _eth) {
             if (msg.value != amountIn) revert WrongValue();
         } else {
             if (msg.value != 0) revert WrongValue();
-            IERC20(tokenIn).transferFrom(msg.sender, address(WALLET), amountIn);
+            IERC20(tokenIn).transferFrom(msg.sender, address(wallet), amountIn);
         }
-        returnData = WALLET.executeShortcut{value: msg.value}(bytes32(0), commands, state);
+        returnData = wallet.executeShortcut{value: msg.value}(bytes32(0), commands, state);
     }
 
     function safeRoute(
@@ -49,10 +47,10 @@ contract EnsoShortcutRouter {
         bytes32[] calldata commands,
         bytes[] calldata state
     ) external payable returns (bytes[] memory returnData) {
-        uint256 balance = tokenOut == ETH ? msg.sender.balance : IERC20(tokenOut).balanceOf(msg.sender);
+        uint256 balance = tokenOut == _eth ? msg.sender.balance : IERC20(tokenOut).balanceOf(msg.sender);
         returnData = route(tokenIn, amountIn, commands, state);
         uint256 amountOut;
-        if (tokenOut == ETH) {
+        if (tokenOut == _eth) {
             amountOut = msg.sender.balance - balance;
         } else {
             amountOut = IERC20(tokenOut).balanceOf(msg.sender) - balance;
