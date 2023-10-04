@@ -2,29 +2,46 @@
 pragma solidity ^0.8.17;
 
 import { IERC20 } from "openzeppelin/token/ERC20/IERC20.sol";
+import { VM } from "enso-weiroll/VM.sol";
+import { MinimalWallet } from "shortcuts-contracts/wallet/MinimalWallet.sol";
+import { AccessController } from "shortcuts-contracts/access/AccessController.sol";
 
-interface IEnsoWalletFactory {
-    function deploy(bytes32, bytes32[] calldata, bytes[] calldata) external returns (IEnsoWallet);
-}
+contract EnsoShortcuts is VM, MinimalWallet, AccessController {
+    address public executor;
 
-interface IEnsoWallet {
-    function executeShortcut(bytes32, bytes32[] calldata, bytes[] calldata) external payable returns (bytes[] memory);
+    constructor(address owner_, address executor_) {
+        _setPermission(OWNER_ROLE, owner_, true);
+        executor = executor_;
+    }
+
+    // @notice Execute a shortcut
+    // @param commands An array of bytes32 values that encode calls
+    // @param state An array of bytes that are used to generate call data for each command
+    function executeShortcut(
+        bytes32[] calldata commands,
+        bytes[] calldata state
+    ) external payable returns (bytes[] memory) {
+        // we could use the AccessController here to check if the msg.sender is the settlement address
+        // but as it's a hot path we do a less gas intensive check
+        if (msg.sender != executor) revert NotPermitted();
+        return _execute(commands, state);
+    }
 }
 
 contract EnsoShortcutRouter {
     address private constant _ETH = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-    IEnsoWalletFactory private constant _FACTORY = IEnsoWalletFactory(0x7fEA6786D291A87fC4C98aFCCc5A5d3cFC36bc7b);
 
-    IEnsoWallet public immutable wallet;
+    EnsoShortcuts public immutable enso;
 
     error WrongValue();
     error AmountTooLow();
+    error ArrayMismatch();
 
-    constructor() {
-        wallet = _FACTORY.deploy(bytes32(0), new bytes32[](0), new bytes[](0));
+    constructor(address owner_) {
+        enso = new EnsoShortcuts(owner_, address(this));
     }
 
-    function route(
+    function routeSingle(
         address tokenIn,
         uint256 amountIn,
         bytes32[] calldata commands,
@@ -34,12 +51,40 @@ contract EnsoShortcutRouter {
             if (msg.value != amountIn) revert WrongValue();
         } else {
             if (msg.value != 0) revert WrongValue();
-            IERC20(tokenIn).transferFrom(msg.sender, address(wallet), amountIn);
+            IERC20(tokenIn).transferFrom(msg.sender, address(enso), amountIn);
         }
-        returnData = wallet.executeShortcut{value: msg.value}(bytes32(0), commands, state);
+        returnData = enso.executeShortcut{value: msg.value}(commands, state);
     }
 
-    function safeRoute(
+
+    function routeMulti(
+        address[] memory tokensIn,
+        uint256[] memory amountsIn,
+        bytes32[] calldata commands,
+        bytes[] calldata state
+    ) public payable returns (bytes[] memory returnData) {
+        uint256 length = tokensIn.length;
+        if (amountsIn.length != length) revert ArrayMismatch();
+
+        bool ethFlag;
+        address tokenIn;
+        uint256 amountIn;
+        for (uint256 i; i < length; ++i) {
+            tokenIn = tokensIn[i];
+            amountIn = amountsIn[i];
+            if (tokenIn == _ETH) {
+                ethFlag = true;
+                if (msg.value != amountIn) revert WrongValue();
+            } else {
+                IERC20(tokenIn).transferFrom(msg.sender, address(enso), amountIn);
+            }
+        }
+        if (!ethFlag && msg.value != 0) revert WrongValue();
+        
+        returnData = enso.executeShortcut{value: msg.value}(commands, state);
+    }
+
+    function safeRouteSingle(
         address tokenIn,
         address tokenOut,
         uint256 amountIn,
@@ -48,7 +93,7 @@ contract EnsoShortcutRouter {
         bytes[] calldata state
     ) external payable returns (bytes[] memory returnData) {
         uint256 balance = tokenOut == _ETH ? msg.sender.balance : IERC20(tokenOut).balanceOf(msg.sender);
-        returnData = route(tokenIn, amountIn, commands, state);
+        returnData = routeSingle(tokenIn, amountIn, commands, state);
         uint256 amountOut;
         if (tokenOut == _ETH) {
             amountOut = msg.sender.balance - balance;
@@ -56,5 +101,38 @@ contract EnsoShortcutRouter {
             amountOut = IERC20(tokenOut).balanceOf(msg.sender) - balance;
         }
         if (amountOut < minAmountOut) revert AmountTooLow();
+    }
+
+    function safeRouteMulti(
+        address[] memory tokensIn,
+        address[] memory tokensOut,
+        uint256[] memory amountsIn,
+        uint256[] memory minAmountsOut,
+        bytes32[] calldata commands,
+        bytes[] calldata state
+    ) external payable returns (bytes[] memory returnData) {
+        uint256 length = tokensOut.length;
+        if (minAmountsOut.length != length) revert ArrayMismatch();
+
+        uint256[] memory balances = new uint256[](length);
+
+        address tokenOut;
+        for (uint256 i; i < length; ++i) {
+            tokenOut = tokensOut[i];
+            balances[i] = tokenOut == _ETH ? msg.sender.balance : IERC20(tokenOut).balanceOf(msg.sender);
+        }
+
+        returnData = routeMulti(tokensIn, amountsIn, commands, state);
+
+        uint256 amountOut;
+        for (uint256 i; i < length; ++i) {
+            tokenOut = tokensOut[i];
+            if (tokenOut == _ETH) {
+                amountOut = msg.sender.balance - balances[i];
+            } else {
+                amountOut = IERC20(tokenOut).balanceOf(msg.sender) - balances[i];
+            }
+            if (amountOut < minAmountsOut[i]) revert AmountTooLow();
+        }
     }
 }

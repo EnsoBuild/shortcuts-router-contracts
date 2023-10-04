@@ -22,7 +22,7 @@ contract RouterTest is Test {
     function setUp() public {
         _ethereumFork = vm.createFork(_rpcURL);
         vm.selectFork(_ethereumFork);
-        router = new EnsoShortcutRouter();
+        router = new EnsoShortcutRouter(address(this));
         token = new MockERC20("Test", "TST");
         vault = new MockVault("Vault", "VLT", address(token));
         token.mint(address(this), AMOUNT * 10);
@@ -64,7 +64,7 @@ contract RouterTest is Test {
         state[1] = abi.encode(AMOUNT);
         state[2] = abi.encode(address(this));
 
-        router.safeRoute(address(token), address(vault), AMOUNT, AMOUNT, commands, state);
+        router.safeRouteSingle(address(token), address(vault), AMOUNT, AMOUNT, commands, state);
         assertEq(AMOUNT, vault.balanceOf(address(this)));
     }
 
@@ -102,7 +102,7 @@ contract RouterTest is Test {
         state[1] = abi.encode(AMOUNT);
         state[2] = abi.encode(address(this));
 
-        router.safeRoute(address(token), address(vault), AMOUNT, AMOUNT, commands, state);
+        router.safeRouteSingle(address(token), address(vault), AMOUNT, AMOUNT, commands, state);
     }
 
     function testFailVaultDepositNoTransfer() public {
@@ -133,7 +133,7 @@ contract RouterTest is Test {
         state[0] = abi.encode(address(vault));
         state[1] = abi.encode(AMOUNT);
 
-        router.safeRoute(address(token), address(vault), AMOUNT, AMOUNT, commands, state);
+        router.safeRouteSingle(address(token), address(vault), AMOUNT, AMOUNT, commands, state);
     }
 
     function testUnsafeVaultDepositNoTransfer() public {
@@ -164,8 +164,8 @@ contract RouterTest is Test {
         state[0] = abi.encode(address(vault));
         state[1] = abi.encode(AMOUNT);
 
-        router.route(address(token), AMOUNT, commands, state);
+        router.routeSingle(address(token), AMOUNT, commands, state);
         // Funds left in router's wallet!
-        assertEq(AMOUNT, vault.balanceOf(address(router.wallet())));
+        assertEq(AMOUNT, vault.balanceOf(address(router.enso())));
     }
 }

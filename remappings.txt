@@ -1,6 +1,6 @@
 @ensdomains/=lib/shortcuts-contracts/node_modules/@ensdomains/
 @ensofinance/=lib/shortcuts-contracts/node_modules/@ensofinance/
-@openzeppelin/=lib/shortcuts-contracts/node_modules/@openzeppelin/
+@openzeppelin/=lib/openzeppelin-contracts/
 @rari-capital/=lib/shortcuts-contracts/node_modules/@rari-capital/
 clones-with-immutable-args/=lib/shortcuts-contracts/node_modules/clones-with-immutable-args/
 ds-test/=lib/forge-std/lib/ds-test/src/
