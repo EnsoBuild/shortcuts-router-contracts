@@ -9,3 +9,6 @@
 [submodule "lib/shortcuts-contracts"]
 	path = lib/shortcuts-contracts
 	url = https://github.com/ensofinance/shortcuts-contracts
+[submodule "lib/enso-weiroll"]
+	path = lib/enso-weiroll
+	url = https://github.com/ensofinance/enso-weiroll
