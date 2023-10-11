@@ -98,6 +98,7 @@ contract EnsoShortcutRouter {
     // @param tokenOut The address of the token to receive
     // @param amountIn The amount of the token to send
     // @param minAmountOut The minimum amount of the token to receive
+    // @param receiver The address of the wallet that will receive the tokens
     // @param commands An array of bytes32 values that encode calls
     // @param state An array of bytes that are used to generate call data for each command
     function safeRouteSingle(
@@ -105,16 +106,17 @@ contract EnsoShortcutRouter {
         address tokenOut,
         uint256 amountIn,
         uint256 minAmountOut,
+        address receiver,
         bytes32[] calldata commands,
         bytes[] calldata state
     ) external payable returns (bytes[] memory returnData) {
-        uint256 balance = tokenOut == _ETH ? msg.sender.balance : IERC20(tokenOut).balanceOf(msg.sender);
+        uint256 balance = tokenOut == _ETH ? receiver.balance : IERC20(tokenOut).balanceOf(receiver);
         returnData = routeSingle(tokenIn, amountIn, commands, state);
         uint256 amountOut;
         if (tokenOut == _ETH) {
-            amountOut = msg.sender.balance - balance;
+            amountOut = receiver.balance - balance;
         } else {
-            amountOut = IERC20(tokenOut).balanceOf(msg.sender) - balance;
+            amountOut = IERC20(tokenOut).balanceOf(receiver) - balance;
         }
         if (amountOut < minAmountOut) revert AmountTooLow();
     }
@@ -124,6 +126,7 @@ contract EnsoShortcutRouter {
     // @param tokensOut The addresses of the tokens to receive
     // @param amountsIn The amounts of the tokens to send
     // @param minAmountsOut The minimum amounts of the tokens to receive
+    // @param receiver The address of the wallet that will receive the tokens
     // @param commands An array of bytes32 values that encode calls
     // @param state An array of bytes that are used to generate call data for each command
     function safeRouteMulti(
@@ -131,6 +134,7 @@ contract EnsoShortcutRouter {
         address[] memory tokensOut,
         uint256[] memory amountsIn,
         uint256[] memory minAmountsOut,
+        address receiver,
         bytes32[] calldata commands,
         bytes[] calldata state
     ) external payable returns (bytes[] memory returnData) {
@@ -142,7 +146,7 @@ contract EnsoShortcutRouter {
         address tokenOut;
         for (uint256 i; i < length; ++i) {
             tokenOut = tokensOut[i];
-            balances[i] = tokenOut == _ETH ? msg.sender.balance : IERC20(tokenOut).balanceOf(msg.sender);
+            balances[i] = tokenOut == _ETH ? receiver.balance : IERC20(tokenOut).balanceOf(receiver);
         }
 
         returnData = routeMulti(tokensIn, amountsIn, commands, state);
@@ -151,9 +155,9 @@ contract EnsoShortcutRouter {
         for (uint256 i; i < length; ++i) {
             tokenOut = tokensOut[i];
             if (tokenOut == _ETH) {
-                amountOut = msg.sender.balance - balances[i];
+                amountOut = receiver.balance - balances[i];
             } else {
-                amountOut = IERC20(tokenOut).balanceOf(msg.sender) - balances[i];
+                amountOut = IERC20(tokenOut).balanceOf(receiver) - balances[i];
             }
             if (amountOut < minAmountsOut[i]) revert AmountTooLow();
         }
