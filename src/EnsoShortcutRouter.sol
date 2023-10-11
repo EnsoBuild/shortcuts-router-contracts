@@ -21,7 +21,7 @@ contract EnsoShortcuts is VM, MinimalWallet, AccessController {
         bytes32[] calldata commands,
         bytes[] calldata state
     ) external payable returns (bytes[] memory) {
-        // we could use the AccessController here to check if the msg.sender is the settlement address
+        // we could use the AccessController here to check if the msg.sender is the executor address
         // but as it's a hot path we do a less gas intensive check
         if (msg.sender != executor) revert NotPermitted();
         return _execute(commands, state);
@@ -41,6 +41,11 @@ contract EnsoShortcutRouter {
         enso = new EnsoShortcuts(owner_, address(this));
     }
 
+    // @notice Route a single token via an Enso Shortcut
+    // @param tokenIn The address of the token to send
+    // @param amountIn The amount of the token to send
+    // @param commands An array of bytes32 values that encode calls
+    // @param state An array of bytes that are used to generate call data for each command
     function routeSingle(
         address tokenIn,
         uint256 amountIn,
@@ -56,7 +61,11 @@ contract EnsoShortcutRouter {
         returnData = enso.executeShortcut{value: msg.value}(commands, state);
     }
 
-
+    // @notice Route multiple tokens via an Enso Shortcut
+    // @param tokensIn The addresses of the tokens to send
+    // @param amountsIn The amounts of the tokens to send
+    // @param commands An array of bytes32 values that encode calls
+    // @param state An array of bytes that are used to generate call data for each command
     function routeMulti(
         address[] memory tokensIn,
         uint256[] memory amountsIn,
@@ -84,6 +93,13 @@ contract EnsoShortcutRouter {
         returnData = enso.executeShortcut{value: msg.value}(commands, state);
     }
 
+    // @notice Route a single token via an Enso Shortcut and revert if there is insufficient token received
+    // @param tokenIn The address of the token to send
+    // @param tokenOut The address of the token to receive
+    // @param amountIn The amount of the token to send
+    // @param minAmountOut The minimum amount of the token to receive
+    // @param commands An array of bytes32 values that encode calls
+    // @param state An array of bytes that are used to generate call data for each command
     function safeRouteSingle(
         address tokenIn,
         address tokenOut,
@@ -103,6 +119,13 @@ contract EnsoShortcutRouter {
         if (amountOut < minAmountOut) revert AmountTooLow();
     }
 
+    // @notice Route multiple tokens via an Enso Shortcut and revert if there is insufficient tokens received
+    // @param tokensIn The addresses of the tokens to send
+    // @param tokensOut The addresses of the tokens to receive
+    // @param amountsIn The amounts of the tokens to send
+    // @param minAmountsOut The minimum amounts of the tokens to receive
+    // @param commands An array of bytes32 values that encode calls
+    // @param state An array of bytes that are used to generate call data for each command
     function safeRouteMulti(
         address[] memory tokensIn,
         address[] memory tokensOut,
