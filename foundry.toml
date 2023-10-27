@@ -5,4 +5,10 @@ libs = ['lib']
 solc = '0.8.17'
 via-ir = true
 
+[rpc_endpoints]
+ethereum = "${ETHEREUM_RPC_URL}"
+
+[etherscan]
+ethereum = { key = "${ETHERSCAN_API_KEY}" }
+
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
