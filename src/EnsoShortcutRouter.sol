@@ -16,9 +16,8 @@ contract EnsoShortcutRouter {
 
     EnsoShortcuts public immutable enso;
 
-    error WrongValue();
-    error AmountTooLow();
-    error ArrayMismatch();
+    error WrongValue(uint256 value, uint256 amount);
+    error AmountTooLow(address token);
 
     constructor(address owner_) {
         enso = new EnsoShortcuts(owner_, address(this));
@@ -36,9 +35,9 @@ contract EnsoShortcutRouter {
         bytes[] calldata state
     ) public payable returns (bytes[] memory returnData) {
         if (tokenIn == _ETH) {
-            if (msg.value != amountIn) revert WrongValue();
+            if (msg.value != amountIn) revert WrongValue(msg.value, amountIn);
         } else {
-            if (msg.value != 0) revert WrongValue();
+            if (msg.value != 0) revert WrongValue(msg.value, 0);
             tokenIn.safeTransferFrom(msg.sender, address(enso), amountIn);
         }
         returnData = enso.executeShortcut{value: msg.value}(commands, state);
@@ -61,12 +60,12 @@ contract EnsoShortcutRouter {
             amountIn = tokensIn[i].amount;
             if (tokenIn == _ETH) {
                 ethFlag = true;
-                if (msg.value != amountIn) revert WrongValue();
+                if (msg.value != amountIn) revert WrongValue(msg.value, amountIn);
             } else {
                 tokenIn.safeTransferFrom(msg.sender, address(enso), amountIn);
             }
         }
-        if (!ethFlag && msg.value != 0) revert WrongValue();
+        if (!ethFlag && msg.value != 0) revert WrongValue(msg.value, 0);
         
         returnData = enso.executeShortcut{value: msg.value}(commands, state);
     }
@@ -96,7 +95,7 @@ contract EnsoShortcutRouter {
         } else {
             amountOut = tokenOut.balanceOf(receiver) - balance;
         }
-        if (amountOut < minAmountOut) revert AmountTooLow();
+        if (amountOut < minAmountOut) revert AmountTooLow(address(tokenOut));
     }
 
     // @notice Route multiple tokens via an Enso Shortcut and revert if there is insufficient tokens received
@@ -131,7 +130,7 @@ contract EnsoShortcutRouter {
             } else {
                 amountOut = tokenOut.balanceOf(receiver) - balances[i];
             }
-            if (amountOut < tokensOut[i].amount) revert AmountTooLow();
+            if (amountOut < tokensOut[i].amount) revert AmountTooLow(address(tokenOut));
         }
     }
 }
