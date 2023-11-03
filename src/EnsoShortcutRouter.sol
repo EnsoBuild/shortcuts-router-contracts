@@ -2,9 +2,11 @@
 pragma solidity ^0.8.0;
 
 import { EnsoShortcuts } from "./EnsoShortcuts.sol";
-import { IERC20 } from "openzeppelin/token/ERC20/IERC20.sol";
+import { SafeERC20, IERC20 } from "openzeppelin/token/ERC20/utils/SafeERC20.sol";
 
 contract EnsoShortcutRouter {
+    using SafeERC20 for IERC20;
+
     address private constant _ETH = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     EnsoShortcuts public immutable enso;
@@ -32,7 +34,7 @@ contract EnsoShortcutRouter {
             if (msg.value != amountIn) revert WrongValue();
         } else {
             if (msg.value != 0) revert WrongValue();
-            IERC20(tokenIn).transferFrom(msg.sender, address(enso), amountIn);
+            IERC20(tokenIn).safeTransferFrom(msg.sender, address(enso), amountIn);
         }
         returnData = enso.executeShortcut{value: msg.value}(commands, state);
     }
@@ -61,7 +63,7 @@ contract EnsoShortcutRouter {
                 ethFlag = true;
                 if (msg.value != amountIn) revert WrongValue();
             } else {
-                IERC20(tokenIn).transferFrom(msg.sender, address(enso), amountIn);
+                IERC20(tokenIn).safeTransferFrom(msg.sender, address(enso), amountIn);
             }
         }
         if (!ethFlag && msg.value != 0) revert WrongValue();
