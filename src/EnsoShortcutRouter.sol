@@ -7,7 +7,7 @@ import { SafeERC20, IERC20 } from "openzeppelin/token/ERC20/utils/SafeERC20.sol"
 contract EnsoShortcutRouter {
     using SafeERC20 for IERC20;
 
-    address private constant _ETH = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+    IERC20 private constant _ETH = IERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     EnsoShortcuts public immutable enso;
 
@@ -25,7 +25,7 @@ contract EnsoShortcutRouter {
     // @param commands An array of bytes32 values that encode calls
     // @param state An array of bytes that are used to generate call data for each command
     function routeSingle(
-        address tokenIn,
+        IERC20 tokenIn,
         uint256 amountIn,
         bytes32[] calldata commands,
         bytes[] calldata state
@@ -34,7 +34,7 @@ contract EnsoShortcutRouter {
             if (msg.value != amountIn) revert WrongValue();
         } else {
             if (msg.value != 0) revert WrongValue();
-            IERC20(tokenIn).safeTransferFrom(msg.sender, address(enso), amountIn);
+            tokenIn.safeTransferFrom(msg.sender, address(enso), amountIn);
         }
         returnData = enso.executeShortcut{value: msg.value}(commands, state);
     }
@@ -45,7 +45,7 @@ contract EnsoShortcutRouter {
     // @param commands An array of bytes32 values that encode calls
     // @param state An array of bytes that are used to generate call data for each command
     function routeMulti(
-        address[] memory tokensIn,
+        IERC20[] memory tokensIn,
         uint256[] memory amountsIn,
         bytes32[] calldata commands,
         bytes[] calldata state
@@ -54,7 +54,7 @@ contract EnsoShortcutRouter {
         if (amountsIn.length != length) revert ArrayMismatch();
 
         bool ethFlag;
-        address tokenIn;
+        IERC20 tokenIn;
         uint256 amountIn;
         for (uint256 i; i < length; ++i) {
             tokenIn = tokensIn[i];
@@ -63,7 +63,7 @@ contract EnsoShortcutRouter {
                 ethFlag = true;
                 if (msg.value != amountIn) revert WrongValue();
             } else {
-                IERC20(tokenIn).safeTransferFrom(msg.sender, address(enso), amountIn);
+                tokenIn.safeTransferFrom(msg.sender, address(enso), amountIn);
             }
         }
         if (!ethFlag && msg.value != 0) revert WrongValue();
@@ -80,21 +80,21 @@ contract EnsoShortcutRouter {
     // @param commands An array of bytes32 values that encode calls
     // @param state An array of bytes that are used to generate call data for each command
     function safeRouteSingle(
-        address tokenIn,
-        address tokenOut,
+        IERC20 tokenIn,
+        IERC20 tokenOut,
         uint256 amountIn,
         uint256 minAmountOut,
         address receiver,
         bytes32[] calldata commands,
         bytes[] calldata state
     ) external payable returns (bytes[] memory returnData) {
-        uint256 balance = tokenOut == _ETH ? receiver.balance : IERC20(tokenOut).balanceOf(receiver);
+        uint256 balance = tokenOut == _ETH ? receiver.balance : tokenOut.balanceOf(receiver);
         returnData = routeSingle(tokenIn, amountIn, commands, state);
         uint256 amountOut;
         if (tokenOut == _ETH) {
             amountOut = receiver.balance - balance;
         } else {
-            amountOut = IERC20(tokenOut).balanceOf(receiver) - balance;
+            amountOut = tokenOut.balanceOf(receiver) - balance;
         }
         if (amountOut < minAmountOut) revert AmountTooLow();
     }
@@ -108,8 +108,8 @@ contract EnsoShortcutRouter {
     // @param commands An array of bytes32 values that encode calls
     // @param state An array of bytes that are used to generate call data for each command
     function safeRouteMulti(
-        address[] memory tokensIn,
-        address[] memory tokensOut,
+        IERC20[] memory tokensIn,
+        IERC20[] memory tokensOut,
         uint256[] memory amountsIn,
         uint256[] memory minAmountsOut,
         address receiver,
@@ -121,10 +121,10 @@ contract EnsoShortcutRouter {
 
         uint256[] memory balances = new uint256[](length);
 
-        address tokenOut;
+        IERC20 tokenOut;
         for (uint256 i; i < length; ++i) {
             tokenOut = tokensOut[i];
-            balances[i] = tokenOut == _ETH ? receiver.balance : IERC20(tokenOut).balanceOf(receiver);
+            balances[i] = tokenOut == _ETH ? receiver.balance : tokenOut.balanceOf(receiver);
         }
 
         returnData = routeMulti(tokensIn, amountsIn, commands, state);
@@ -135,7 +135,7 @@ contract EnsoShortcutRouter {
             if (tokenOut == _ETH) {
                 amountOut = receiver.balance - balances[i];
             } else {
-                amountOut = IERC20(tokenOut).balanceOf(receiver) - balances[i];
+                amountOut = tokenOut.balanceOf(receiver) - balances[i];
             }
             if (amountOut < minAmountsOut[i]) revert AmountTooLow();
         }

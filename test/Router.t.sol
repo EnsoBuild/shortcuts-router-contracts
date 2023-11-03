@@ -64,7 +64,7 @@ contract RouterTest is Test {
         state[1] = abi.encode(AMOUNT);
         state[2] = abi.encode(address(this));
 
-        router.safeRouteSingle(address(token), address(vault), AMOUNT, AMOUNT, address(this), commands, state);
+        router.safeRouteSingle(token, vault, AMOUNT, AMOUNT, address(this), commands, state);
         assertEq(AMOUNT, vault.balanceOf(address(this)));
     }
 
@@ -102,7 +102,7 @@ contract RouterTest is Test {
         state[1] = abi.encode(AMOUNT);
         state[2] = abi.encode(address(this));
 
-        router.safeRouteSingle(address(token), address(vault), AMOUNT, AMOUNT, address(this), commands, state);
+        router.safeRouteSingle(token, vault, AMOUNT, AMOUNT, address(this), commands, state);
     }
 
     function testFailVaultDepositNoTransfer() public {
@@ -133,7 +133,7 @@ contract RouterTest is Test {
         state[0] = abi.encode(address(vault));
         state[1] = abi.encode(AMOUNT);
 
-        router.safeRouteSingle(address(token), address(vault), AMOUNT, AMOUNT, address(this), commands, state);
+        router.safeRouteSingle(token, vault, AMOUNT, AMOUNT, address(this), commands, state);
     }
 
     function testUnsafeVaultDepositNoTransfer() public {
@@ -164,7 +164,7 @@ contract RouterTest is Test {
         state[0] = abi.encode(address(vault));
         state[1] = abi.encode(AMOUNT);
 
-        router.routeSingle(address(token), AMOUNT, commands, state);
+        router.routeSingle(token, AMOUNT, commands, state);
         // Funds left in router's wallet!
         assertEq(AMOUNT, vault.balanceOf(address(router.enso())));
     }
