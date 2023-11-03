@@ -4,6 +4,11 @@ pragma solidity ^0.8.0;
 import { EnsoShortcuts } from "./EnsoShortcuts.sol";
 import { SafeERC20, IERC20 } from "openzeppelin/token/ERC20/utils/SafeERC20.sol";
 
+struct Token {
+    IERC20 token;
+    uint256 amount;
+}
+
 contract EnsoShortcutRouter {
     using SafeERC20 for IERC20;
 
@@ -40,25 +45,20 @@ contract EnsoShortcutRouter {
     }
 
     // @notice Route multiple tokens via an Enso Shortcut
-    // @param tokensIn The addresses of the tokens to send
-    // @param amountsIn The amounts of the tokens to send
+    // @param tokensIn The addresses and amounts of the tokens to send
     // @param commands An array of bytes32 values that encode calls
     // @param state An array of bytes that are used to generate call data for each command
     function routeMulti(
-        IERC20[] memory tokensIn,
-        uint256[] memory amountsIn,
+        Token[] calldata tokensIn,
         bytes32[] calldata commands,
         bytes[] calldata state
     ) public payable returns (bytes[] memory returnData) {
-        uint256 length = tokensIn.length;
-        if (amountsIn.length != length) revert ArrayMismatch();
-
         bool ethFlag;
         IERC20 tokenIn;
         uint256 amountIn;
-        for (uint256 i; i < length; ++i) {
-            tokenIn = tokensIn[i];
-            amountIn = amountsIn[i];
+        for (uint256 i; i < tokensIn.length; ++i) {
+            tokenIn = tokensIn[i].token;
+            amountIn = tokensIn[i].amount;
             if (tokenIn == _ETH) {
                 ethFlag = true;
                 if (msg.value != amountIn) revert WrongValue();
@@ -100,44 +100,38 @@ contract EnsoShortcutRouter {
     }
 
     // @notice Route multiple tokens via an Enso Shortcut and revert if there is insufficient tokens received
-    // @param tokensIn The addresses of the tokens to send
-    // @param tokensOut The addresses of the tokens to receive
-    // @param amountsIn The amounts of the tokens to send
-    // @param minAmountsOut The minimum amounts of the tokens to receive
+    // @param tokensIn The addresses and amounts of the tokens to send
+    // @param tokensOut The addresses and minimum amounts of the tokens to receive
     // @param receiver The address of the wallet that will receive the tokens
     // @param commands An array of bytes32 values that encode calls
     // @param state An array of bytes that are used to generate call data for each command
     function safeRouteMulti(
-        IERC20[] memory tokensIn,
-        IERC20[] memory tokensOut,
-        uint256[] memory amountsIn,
-        uint256[] memory minAmountsOut,
+        Token[] calldata tokensIn,
+        Token[] calldata tokensOut,
         address receiver,
         bytes32[] calldata commands,
         bytes[] calldata state
     ) external payable returns (bytes[] memory returnData) {
         uint256 length = tokensOut.length;
-        if (minAmountsOut.length != length) revert ArrayMismatch();
-
         uint256[] memory balances = new uint256[](length);
 
         IERC20 tokenOut;
         for (uint256 i; i < length; ++i) {
-            tokenOut = tokensOut[i];
+            tokenOut = tokensOut[i].token;
             balances[i] = tokenOut == _ETH ? receiver.balance : tokenOut.balanceOf(receiver);
         }
 
-        returnData = routeMulti(tokensIn, amountsIn, commands, state);
+        returnData = routeMulti(tokensIn, commands, state);
 
         uint256 amountOut;
         for (uint256 i; i < length; ++i) {
-            tokenOut = tokensOut[i];
+            tokenOut = tokensOut[i].token;
             if (tokenOut == _ETH) {
                 amountOut = receiver.balance - balances[i];
             } else {
                 amountOut = tokenOut.balanceOf(receiver) - balances[i];
             }
-            if (amountOut < minAmountsOut[i]) revert AmountTooLow();
+            if (amountOut < tokensOut[i].amount) revert AmountTooLow();
         }
     }
 }

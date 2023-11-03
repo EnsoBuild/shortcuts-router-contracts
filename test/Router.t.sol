@@ -168,4 +168,48 @@ contract RouterTest is Test {
         // Funds left in router's wallet!
         assertEq(AMOUNT, vault.balanceOf(address(router.enso())));
     }
+    
+    function testRouteMulti() public {
+        vm.selectFork(_ethereumFork);
+
+        token.approve(address(router), AMOUNT);
+
+        bytes32[] memory commands = new bytes32[](3);
+        bytes[] memory state = new bytes[](3);
+
+        commands[0] = WeirollPlanner.buildCommand(
+            token.approve.selector,
+            0x01, // call
+            0x0001ffffffff, // 2 inputs
+            0xff, // no output
+            address(token)
+        );
+    
+        commands[1] = WeirollPlanner.buildCommand(
+            vault.deposit.selector,
+            0x01, // call
+            0x01ffffffffff, // 1 input
+            0xff, // no output
+            address(vault)
+        );
+
+        commands[2] = WeirollPlanner.buildCommand(
+            vault.transfer.selector,
+            0x01, // call
+            0x0201ffffffff, // 2 inputs
+            0xff, // no output
+            address(vault)
+        );
+
+        state[0] = abi.encode(address(vault));
+        state[1] = abi.encode(AMOUNT);
+        state[2] = abi.encode(address(this));
+
+        Token[] memory tokensIn = new Token[](2);
+        tokensIn[0] = Token(token, AMOUNT);
+        tokensIn[1] = Token(IERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE), 1);
+
+        router.routeMulti{ value: 1 }(tokensIn, commands, state);
+        assertEq(AMOUNT, vault.balanceOf(address(this)));
+    }
 }
