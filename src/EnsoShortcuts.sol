@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
 import { VM } from "enso-weiroll/VM.sol";
 import { MinimalWallet } from "shortcuts-contracts/wallet/MinimalWallet.sol";

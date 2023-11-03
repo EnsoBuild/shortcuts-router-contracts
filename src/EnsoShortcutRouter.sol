@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.0;
 
 import { EnsoShortcuts } from "./EnsoShortcuts.sol";
 import { IERC20 } from "openzeppelin/token/ERC20/IERC20.sol";
