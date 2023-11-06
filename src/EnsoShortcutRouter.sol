@@ -18,6 +18,7 @@ contract EnsoShortcutRouter {
 
     error WrongValue(uint256 value, uint256 amount);
     error AmountTooLow(address token);
+    error Duplicate(address token);
 
     constructor(address owner_) {
         enso = new EnsoShortcuts(owner_, address(this));
@@ -59,6 +60,7 @@ contract EnsoShortcutRouter {
             tokenIn = tokensIn[i].token;
             amountIn = tokensIn[i].amount;
             if (tokenIn == _ETH) {
+                if (ethFlag) revert Duplicate(address(_ETH));
                 ethFlag = true;
                 if (msg.value != amountIn) revert WrongValue(msg.value, amountIn);
             } else {
