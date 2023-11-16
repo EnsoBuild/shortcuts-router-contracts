@@ -15,7 +15,7 @@ contract Deployer is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        address owner = 0xca702d224D61ae6980c8c7d4D98042E22b40FFdB;
+        address owner = 0xfae0bbFD75307865Dcdf21d9deFEFEDEee718431;
 
         result.router = new EnsoShortcutRouter{salt: "EnsoShortcutRouter"}(owner);
         result.shortcuts = result.router.enso();
