@@ -16,7 +16,9 @@ avalanche = "${AVALANCHE_RPC_URL}"
 fantom = "${FANTOM_RPC_URL}"
 aurora = "${AURORA_RPC_URL}"
 goerli = "${GOERLI_RPC_URL}"
-base= "${BASE_RPC_URL}"
+base = "${BASE_RPC_URL}"
+linea = "${LINEA_RPC_URL}"
+artio = "${ARTIO_RPC_URL}"
 
 [etherscan]
 ethereum = { key = "${ETHERSCAN_API_KEY}" }
