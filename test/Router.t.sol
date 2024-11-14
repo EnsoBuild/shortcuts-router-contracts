@@ -3,6 +3,7 @@ pragma solidity ^0.8.10;
 
 import "../lib/forge-std/src/Test.sol";
 import "../src/EnsoShortcutRouter.sol";
+import "../src/EnsoShortcuts.sol";
 import "./mocks/MockERC20.sol";
 import "./mocks/MockVault.sol";
 import "./utils/WeirollPlanner.sol";
@@ -23,9 +24,15 @@ contract RouterTest is Test {
         _ethereumFork = vm.createFork(_rpcURL);
         vm.selectFork(_ethereumFork);
         router = new EnsoShortcutRouter(address(this));
+        EnsoShortcuts shortcuts = new EnsoShortcuts(address(router));
+        router.initialize(address(shortcuts));
         token = new MockERC20("Test", "TST");
         vault = new MockVault("Vault", "VLT", address(token));
         token.mint(address(this), AMOUNT * 10);
+    }
+
+    function testFailSecondInitialize() public {
+        router.initialize(address(this));
     }
 
     function testVaultDeposit() public {

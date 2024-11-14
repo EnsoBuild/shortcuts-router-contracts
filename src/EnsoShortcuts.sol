@@ -1,15 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.24;
 
 import { VM } from "enso-weiroll/VM.sol";
-import { MinimalWallet } from "shortcuts-contracts/wallet/MinimalWallet.sol";
-import { AccessController } from "shortcuts-contracts/access/AccessController.sol";
 
-contract EnsoShortcuts is VM, MinimalWallet, AccessController {
+interface IEnsoShortcuts {
+    function executeShortcut(
+        bytes32[] calldata commands,
+        bytes[] calldata state
+    ) external payable returns (bytes[] memory);
+}
+
+contract EnsoShortcuts is IEnsoShortcuts, VM {
     address public executor;
 
-    constructor(address owner_, address executor_) {
-        _setPermission(OWNER_ROLE, owner_, true);
+    error NotPermitted();
+
+    constructor(address executor_) {
         executor = executor_;
     }
 
@@ -20,8 +26,6 @@ contract EnsoShortcuts is VM, MinimalWallet, AccessController {
         bytes32[] calldata commands,
         bytes[] calldata state
     ) external payable returns (bytes[] memory) {
-        // we could use the AccessController here to check if the msg.sender is the executor address
-        // but as it's a hot path we do a less gas intensive check
         if (msg.sender != executor) revert NotPermitted();
         return _execute(commands, state);
     }

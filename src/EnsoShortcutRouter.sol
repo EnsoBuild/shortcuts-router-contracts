@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.24;
 
-import { EnsoShortcuts } from "./EnsoShortcuts.sol";
+import { IEnsoShortcuts } from "./EnsoShortcuts.sol";
 import { SafeERC20, IERC20 } from "openzeppelin/token/ERC20/utils/SafeERC20.sol";
 
 struct Token {
@@ -14,14 +14,23 @@ contract EnsoShortcutRouter {
 
     IERC20 private constant _ETH = IERC20(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
-    EnsoShortcuts public immutable enso;
+    IEnsoShortcuts public enso;
+    address public initializer;
 
     error WrongValue(uint256 value, uint256 amount);
     error AmountTooLow(address token);
     error Duplicate(address token);
+    error NotInitializer();
 
-    constructor(address owner_) {
-        enso = new EnsoShortcuts(owner_, address(this));
+    constructor(address initializer_) {
+        initializer = initializer_;
+    }
+
+    function initialize(address enso_) external {
+        if (msg.sender != initializer) revert NotInitializer();
+        enso = IEnsoShortcuts(enso_);
+        // disable initialize function
+        initializer = address(0);
     }
 
     // @notice Route a single token via an Enso Shortcut

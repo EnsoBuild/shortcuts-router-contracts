@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 import "../src/EnsoShortcutRouter.sol";
+import "../src/EnsoShortcuts.sol";
 
 struct DeployerResult {
     EnsoShortcutRouter router;
@@ -15,10 +16,11 @@ contract Deployer is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        address owner = 0xfae0bbFD75307865Dcdf21d9deFEFEDEee718431;
+        address initializer = address(0x826e0BB2276271eFdF2a500597f37b94f6c153bA);
 
-        result.router = new EnsoShortcutRouter{salt: "EnsoShortcutRouter"}(owner);
-        result.shortcuts = result.router.enso();
+        result.router = new EnsoShortcutRouter{salt: "EnsoShortcutRouter"}(initializer);
+        result.shortcuts = new EnsoShortcuts{salt: "EnsoShortcuts"}(address(result.router));
+        result.router.initialize(address(result.shortcuts));
 
         vm.stopBroadcast();
     }
