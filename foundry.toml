@@ -4,6 +4,8 @@ out = 'out'
 libs = ['lib']
 solc = '0.8.23'
 via-ir = true
+evm-version = 'paris'
+optimizer-runs = 200
 
 [rpc_endpoints]
 ethereum = "${ETHEREUM_RPC_URL}"
